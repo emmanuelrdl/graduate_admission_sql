@@ -1,0 +1,32 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<div class='weather container text-center'>
+	<div class='col-12'>
+		<div>
+			<span>
+				Currently it is {{
+				forecast["currently"]["temperature"]
+				}} Fahrenheit
+
+			</span>
+
+			<span>
+				which is {{
+				(forecast["currently"]["temperature"] - 32)*5/9
+				}} Degrees Celsius
+			</span>
+		</div>
+
+		<div>
+			<span>
+				{{
+				forecast["hourly"]["summary"]
+				}}
+
+			</span>
+		</div>
+	</div>
+</div>
+</div>
+{% endblock %}
