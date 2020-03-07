@@ -1,28 +1,51 @@
-from flask import Flask, render_template, redirect, url_for, request, make_response, jsonify
-import requests
+from flask import Flask, render_template, redirect, url_for, request
 from sklearn.externals import joblib
+import psycopg2
+from flask_sqlalchemy import SQLAlchemy
+import os
 import numpy as np
+import requests
 import json
+
 
 app = Flask(__name__)
 
+print(os.environ["APP_SETTINGS"])
+app.config.from_object(os.environ["APP_SETTINGS"])
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+print(app.config)
+db = SQLAlchemy(app)
+
+import models
 
 @app.route("/")
-def form():
-    response = make_response(render_template("form.html"))
-    return response
+def index():
+    return render_template("index.html")
 
-@app.route("/go", methods = [ 'POST'])
-def go():
-    experience = float(request.form['experience'])
-    model = joblib.load('linear_regression_model.pkl')
-    print(np.array([experience]).reshape(-1, 1))
-    prediction = model.predict(np.array([experience]).reshape(-1, 1))  
-    formatted_pred = round(prediction[0])
-    response = make_response(render_template("index.html",
-                            forecast = formatted_pred))
-    return response
+@app.route("/predict", methods=['POST'])
+def predict():
+    if request.method=='POST':
+
+        regressor = joblib.load("linear_regression_model.pkl")
+
+        data = dict(request.form.items())
+
+        yearsExperience = np.array(float(data["YearsExperience"])).reshape(-1,1)
+
+        prediction = regressor.predict(yearsExperience)
+
+        result = models.Result(
+            YearsExperience = float(yearsExperience),
+            Prediction = float(prediction)
+        )
+
+        db.session.add(result)
+        db.session.commit()
+
+    return render_template("predicted.html", prediction=prediction)
 
 
 if __name__ == '__main__':
     app.run(debug=True)
+
